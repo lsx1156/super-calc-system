@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超采集算系统 - 监控中心</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <h1>超采集算系统</h1>
+                <span class="version">V1.0 - 完整版</span>
+            </div>
+            <div class="header-right">
+                <div class="status-badge" id="system-status">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">待机中</span>
+                </div>
+                <div class="mode-display">
+                    <span>当前模式：</span>
+                    <strong id="current-mode">待机</strong>
+                </div>
+            </div>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="dashboard">总览</button>
+            <button class="tab-btn" data-tab="analog">模拟采集</button>
+            <button class="tab-btn" data-tab="digital">数字捕获</button>
+            <button class="tab-btn" data-tab="crack">暴力破解</button>
+            <button class="tab-btn" data-tab="cluster">集群管理</button>
+            <button class="tab-btn" data-tab="hardware">硬件状态</button>
+            <button class="tab-btn" data-tab="control">系统控制</button>
+        </nav>
+
+        <main class="main-content">
+            <div class="tab-content active" id="tab-dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #4CAF50;">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-online-nodes">0</div>
+                            <div class="stat-label">在线节点</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #2196F3;">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-sample-rate">0</div>
+                            <div class="stat-label">采样率 (SPS)</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #FF9800;">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-total-samples">0</div>
+                            <div class="stat-label">总采样数</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #9C27B0;">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="stat-uptime">0</div>
+                            <div class="stat-label">运行时间</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>实时波形</h3>
+                        <canvas id="waveform-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>FFT频谱分析</h3>
+                        <canvas id="fft-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>系统信息</h3>
+                        <div class="info-list">
+                            <div class="info-row"><span>系统版本</span><strong id="info-version">V1.0</strong></div>
+                            <div class="info-row"><span>工作模式</span><strong id="info-mode">待机</strong></div>
+                            <div class="info-row"><span>运行状态</span><strong id="info-status">停止</strong></div>
+                            <div class="info-row"><span>故障代码</span><strong id="info-fault">0</strong></div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h3>集群信息</h3>
+                        <div class="info-list">
+                            <div class="info-row"><span>Pico2总数</span><strong id="info-pico2-total">0</strong></div>
+                            <div class="info-row"><span>Pico2在线</span><strong id="info-pico2-online">0</strong></div>
+                            <div class="info-row"><span>Pico总数</span><strong id="info-pico-total">0</strong></div>
+                            <div class="info-row"><span>Pico在线</span><strong id="info-pico-online">0</strong></div>
+                            <div class="info-row"><span>故障节点</span><strong id="info-pico-fault">0</strong></div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h3>系统资源</h3>
+                        <div class="info-list">
+                            <div class="info-row"><span>CPU使用率</span><strong id="info-cpu">0%</strong></div>
+                            <div class="info-row"><span>内存使用率</span><strong id="info-mem">0%</strong></div>
+                            <div class="info-row"><span>磁盘使用率</span><strong id="info-disk">0%</strong></div>
+                            <div class="info-row"><span>核心温度</span><strong id="info-temp">25°C</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-analog">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>模拟信号采集</h2>
+                        <div class="panel-actions">
+                            <button class="btn btn-primary" id="btn-start-analog">开始采集</button>
+                            <button class="btn btn-secondary" id="btn-stop-analog">停止采集</button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="channel-grid" id="analog-channels">
+                        </div>
+                        <div class="chart-large">
+                            <h3>多通道波形</h3>
+                            <canvas id="multi-channel-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-digital">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>数字信号捕获</h2>
+                        <div class="panel-actions">
+                            <button class="btn btn-primary" id="btn-start-digital">开始捕获</button>
+                            <button class="btn btn-secondary" id="btn-stop-digital">停止捕获</button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="digital-channels" id="digital-channels">
+                        </div>
+                        <div class="chart-large">
+                            <h3>逻辑分析仪</h3>
+                            <canvas id="logic-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-crack">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>暴力破解引擎</h2>
+                        <div class="panel-actions">
+                            <span class="status-pill" id="crack-status">未启动</span>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="crack-config">
+                            <div class="form-group">
+                                <label>目标哈希</label>
+                                <input type="text" id="crack-target" placeholder="输入要破解的哈希值..." value="5f4dcc3b5aa765d61d8327deb882cf99">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>哈希类型</label>
+                                    <select id="crack-type">
+                                        <option value="md5">MD5</option>
+                                        <option value="sha1">SHA-1</option>
+                                        <option value="sha256">SHA-256</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>密钥长度</label>
+                                    <input type="number" id="crack-keylen" value="16" min="4" max="32">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>字符集</label>
+                                <input type="text" id="crack-charset" value="0123456789abcdef">
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-danger" id="btn-start-crack">开始破解</button>
+                                <button class="btn btn-secondary" id="btn-stop-crack">停止</button>
+                            </div>
+                        </div>
+
+                        <div class="crack-progress">
+                            <h3>破解进度</h3>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="crack-progress-fill"></div>
+                                <span class="progress-text" id="crack-progress-text">0%</span>
+                            </div>
+                            <div class="crack-stats">
+                                <div class="crack-stat">
+                                    <div class="crack-stat-value" id="crack-attempts">0</div>
+                                    <div class="crack-stat-label">尝试次数</div>
+                                </div>
+                                <div class="crack-stat">
+                                    <div class="crack-stat-value" id="crack-rate">0</div>
+                                    <div class="crack-stat-label">速度 (次/秒)</div>
+                                </div>
+                                <div class="crack-stat">
+                                    <div class="crack-stat-value" id="crack-elapsed">0s</div>
+                                    <div class="crack-stat-label">已用时间</div>
+                                </div>
+                            </div>
+                            <div class="crack-result" id="crack-result-box">
+                                <h4>破解结果</h4>
+                                <div class="result-text" id="crack-result">等待中...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-cluster">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>集群管理</h2>
+                        <div class="panel-actions">
+                            <button class="btn btn-primary" id="btn-detect-nodes">检测节点</button>
+                            <button class="btn btn-secondary" id="btn-auto-heal">故障自愈</button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="cluster-overview">
+                            <div class="cluster-stat">
+                                <span class="cluster-stat-value" id="cluster-total">0</span>
+                                <span class="cluster-stat-label">Pico2 总数</span>
+                            </div>
+                            <div class="cluster-stat">
+                                <span class="cluster-stat-value" id="cluster-online">0</span>
+                                <span class="cluster-stat-label">Pico2 在线</span>
+                            </div>
+                            <div class="cluster-stat">
+                                <span class="cluster-stat-value" id="cluster-pico-total">0</span>
+                                <span class="cluster-stat-label">Pico 总数</span>
+                            </div>
+                            <div class="cluster-stat">
+                                <span class="cluster-stat-value" id="cluster-pico-online">0</span>
+                                <span class="cluster-stat-label">Pico 在线</span>
+                            </div>
+                        </div>
+
+                        <div class="cluster-nodes" id="cluster-nodes">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-hardware">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>硬件状态监控</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="hw-grid">
+                            <div class="hw-card">
+                                <h3>温度监控</h3>
+                                <div class="temp-display">
+                                    <div class="temp-value" id="hw-temp">25.0°C</div>
+                                    <div class="temp-bar">
+                                        <div class="temp-fill" id="temp-fill" style="width: 30%"></div>
+                                    </div>
+                                    <div class="temp-labels">
+                                        <span>0°C</span>
+                                        <span>25°C</span>
+                                        <span>50°C</span>
+                                        <span>75°C</span>
+                                        <span>100°C</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hw-card">
+                                <h3>时钟频率</h3>
+                                <div class="freq-list">
+                                    <div class="freq-item">
+                                        <span>Pico 主频</span>
+                                        <strong id="hw-pico-freq">133 MHz</strong>
+                                    </div>
+                                    <div class="freq-item">
+                                        <span>Pico2 主频</span>
+                                        <strong id="hw-pico2-freq">150 MHz</strong>
+                                    </div>
+                                    <div class="freq-item">
+                                        <span>超频状态</span>
+                                        <strong id="hw-oc-status">关闭</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hw-card">
+                                <h3>电源状态</h3>
+                                <div class="power-list">
+                                    <div class="power-item">
+                                        <span>电池电量</span>
+                                        <strong id="hw-battery-level">100%</strong>
+                                    </div>
+                                    <div class="power-item">
+                                        <span>电池电压</span>
+                                        <strong id="hw-battery-volt">7.4V</strong>
+                                    </div>
+                                    <div class="power-item">
+                                        <span>充电状态</span>
+                                        <strong id="hw-charging">未充电</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hw-card">
+                                <h3>电压监控</h3>
+                                <div class="volt-list">
+                                    <div class="volt-item">
+                                        <span>核心电压</span>
+                                        <strong id="hw-vcore">1.1V</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-control">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>系统控制</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="control-section">
+                            <h3>模式切换</h3>
+                            <div class="mode-buttons">
+                                <button class="mode-btn" data-mode="sample">
+                                    <span class="mode-icon">📊</span>
+                                    <span class="mode-name">采样模式</span>
+                                    <span class="mode-desc">模拟/数字信号采集</span>
+                                </button>
+                                <button class="mode-btn" data-mode="crack">
+                                    <span class="mode-icon">🔓</span>
+                                    <span class="mode-name">破译模式</span>
+                                    <span class="mode-desc">边信道分析破译</span>
+                                </button>
+                                <button class="mode-btn" data-mode="bruteforce">
+                                    <span class="mode-icon">💻</span>
+                                    <span class="mode-name">暴力破解</span>
+                                    <span class="mode-desc">分布式算力破解</span>
+                                </button>
+                                <button class="mode-btn" data-mode="hw_test">
+                                    <span class="mode-icon">🔧</span>
+                                    <span class="mode-name">硬件测试</span>
+                                    <span class="mode-desc">硬件故障检测</span>
+                                </button>
+                                <button class="mode-btn standby" data-mode="standby">
+                                    <span class="mode-icon">⏸️</span>
+                                    <span class="mode-name">待机模式</span>
+                                    <span class="mode-desc">停止所有任务</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-section">
+                            <h3>系统操作</h3>
+                            <div class="sys-actions">
+                                <button class="btn btn-primary" id="btn-sys-start">启动系统</button>
+                                <button class="btn btn-secondary" id="btn-sys-stop">停止系统</button>
+                                <button class="btn btn-warning" id="btn-sys-restart">重启系统</button>
+                                <button class="btn btn-danger" id="btn-sys-shutdown">紧急停机</button>
+                            </div>
+                        </div>
+
+                        <div class="control-section">
+                            <h3>系统日志</h3>
+                            <div class="log-viewer" id="log-viewer">
+                                <div class="log-entry">[INFO] 系统初始化完成</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <span>超采集算系统 V1.0 | 自适应集群版</span>
+            <span id="footer-time"></span>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+.program digital_capture
+.side_set 1 opt
+
+    pull block
+    mov x, osr
+
+capture_loop:
+    in pins, 8           side 1
+    push block           side 0
+    jmp x-- capture_loop side 0

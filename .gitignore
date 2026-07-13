@@ -1,0 +1,54 @@
+# Build artifacts
+build/
+out/
+bin/
+*.elf
+*.uf2
+*.bin
+*.hex
+*.o
+*.a
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+Makefile
+*.cmake
+ninja.build
+.ninja_deps
+.ninja_log
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+.env
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Debug
+gdbinit
+core
+
+# Pico SDK (external dependency)
+sdk/pico-sdk/
+sdk/SB/pico/firmware/build/_deps/
+sdk/SB/pico2/firmware/build/_deps/

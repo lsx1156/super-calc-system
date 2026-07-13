@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超采集算系统 V0.1</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>超采集算系统 V0.1</h1>
+        <p>远程监控与结果展示平台</p>
+    </div>
+
+    <!-- 设备状态卡片 -->
+    <div class="card">
+        <h2>设备运行状态</h2>
+        <div class="status-grid">
+            <div class="status-item">
+                <div class="label">工作模式</div>
+                <div class="value" id="work_mode">{{ status.work_mode }}</div>
+            </div>
+            <div class="status-item">
+                <div class="label">运行状态</div>
+                <div class="value" id="run_status">{{ status.run_status }}</div>
+            </div>
+            <div class="status-item">
+                <div class="label">核心温度</div>
+                <div class="value normal" id="core_temp">{{ status.core_temp }}℃</div>
+            </div>
+            <div class="status-item">
+                <div class="label">电池电量</div>
+                <div class="value normal" id="battery">{{ status.battery }}%</div>
+            </div>
+            <div class="status-item">
+                <div class="label">Pico频率</div>
+                <div class="value" id="pico_freq">{{ status.pico_freq }}MHz</div>
+            </div>
+            <div class="status-item">
+                <div class="label">Pico2频率</div>
+                <div class="value" id="pico2_freq">{{ status.pico2_freq }}MHz</div>
+            </div>
+            <div class="status-item">
+                <div class="label">存储使用</div>
+                <div class="value" id="storage">{{ status.storage }}%</div>
+            </div>
+        </div>
+        <div class="status-item" style="text-align: left;">
+            <div class="label">故障信息</div>
+            <div class="value normal" id="fault_info">{{ status.fault_info }}</div>
+        </div>
+    </div>
+
+    <!-- 控制面板 -->
+    <div class="card">
+        <h2>控制面板</h2>
+        <div class="control-grid">
+            <button class="btn btn-primary" id="btn_start_sample">启动采样</button>
+            <button class="btn btn-danger" id="btn_stop_sample">停止采样</button>
+            <button class="btn btn-primary" id="btn_start_crack">启动破解</button>
+            <button class="btn btn-danger" id="btn_stop_crack">停止破解</button>
+        </div>
+        <div class="control-options">
+            <div class="option-group">
+                <label>采样率:</label>
+                <select id="sample_rate">
+                    <option value="1000">1 KSPS</option>
+                    <option value="10000">10 KSPS</option>
+                    <option value="50000">50 KSPS</option>
+                    <option value="125000" selected>125 KSPS</option>
+                </select>
+            </div>
+            <div class="option-group">
+                <label>超频模式:</label>
+                <select id="overclock_mode">
+                    <option value="0" selected>默认模式</option>
+                    <option value="1">高性能模式</option>
+                    <option value="2">自动模式</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 破解设置 -->
+    <div class="card" id="crack_settings">
+        <h2>破解设置</h2>
+        <div class="option-group">
+            <label>目标哈希:</label>
+            <input type="text" id="target_hash" placeholder="输入MD5哈希值">
+        </div>
+        <div class="option-group">
+            <label>密钥长度:</label>
+            <select id="key_length">
+                <option value="8">8位</option>
+                <option value="16" selected>16位</option>
+                <option value="24">24位</option>
+                <option value="32">32位</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 模拟采样波形卡片 -->
+    <div class="card">
+        <h2>模拟采样实时波形</h2>
+        <div class="chart-container">
+            <canvas id="analogChart"></canvas>
+        </div>
+        <div class="chart-info">
+            <span id="peak_freq">主频率: -- Hz</span>
+            <span id="snr">信噪比: -- dB</span>
+        </div>
+    </div>
+
+    <!-- 数字捕获状态卡片 -->
+    <div class="card">
+        <h2>数字捕获状态</h2>
+        <div class="digital-grid" id="digital_channels">
+            <!-- 128路数字通道状态将动态生成 -->
+        </div>
+    </div>
+
+    <!-- 破解结果卡片 -->
+    <div class="card">
+        <h2>算力破解结果</h2>
+        <div class="progress-container">
+            <div class="progress-bar" id="crack_progress_bar" style="width: 0%"></div>
+        </div>
+        <div class="status-item">
+            <div class="label">破解进度</div>
+            <div class="value" id="crack_progress">0%</div>
+        </div>
+        <h3>破解详情</h3>
+        <pre class="result-box" id="crack_result">等待破解任务启动...</pre>
+    </div>
+
+    <!-- 系统信息 -->
+    <div class="card">
+        <h2>系统信息</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">ADC通道数:</span>
+                <span class="info-value">64路</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">ADC分辨率:</span>
+                <span class="info-value">12bit</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">ADC采样率:</span>
+                <span class="info-value">125KSPS</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">数字通道数:</span>
+                <span class="info-value">128路</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">数字捕获率:</span>
+                <span class="info-value">100MSPS</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Pico数量:</span>
+                <span class="info-value">16片</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Pico2数量:</span>
+                <span class="info-value">2片</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">主控:</span>
+                <span class="info-value">树莓派4B</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# 超采集算系统 - Python依赖
+# 树莓派端
+
+# Web框架
+flask>=2.3.0
+flask-socketio>=5.3.0
+python-socketio>=5.8.0
+gevent>=23.0.0
+
+# 数据处理
+numpy>=1.24.0
+pandas>=2.0.0
+
+# 串口通信
+pyserial>=3.5
+
+# 系统监控
+psutil>=5.9.0
+
+# 日志
+colorlog>=6.7.0
+
+# GPIO控制（树莓派）
+RPi.GPIO>=0.7.1
+
+# OLED显示
+adafruit-circuitpython-ssd1306>=2.4.0
+
+# I2C通信
+smbus2>=0.4.2
+
+# 配置文件
+pyyaml>=6.0
+
+# 其他
+requests>=2.31.0
+python-dateutil>=2.8.0

@@ -1,0 +1,34 @@
+# 超采集算系统 - Python依赖
+# 完整版 - Zero 2W适配（512MB RAM限制）
+
+# Web服务（精简）
+flask>=2.3.0
+flask-socketio>=5.3.0
+python-socketio>=5.9.0
+eventlet>=0.33.0
+
+# 数据处理（Zero 2W移除scipy以节省内存）
+numpy>=1.24.0
+# scipy>=1.10.0  # Zero 2W禁用，使用numpy替代
+
+# 串口通信
+pyserial>=3.5
+
+# 系统监控
+psutil>=5.9.0
+
+# 配置与日志
+pyyaml>=6.0
+
+# 破解相关
+pycryptodome>=3.18.0
+
+# 时间同步
+ntplib>=0.4.0
+
+# Zero 2W硬件控制（精简）
+# RPi.GPIO>=0.7.1  # Zero 2W无硬件看门狗，按需启用
+# smbus2>=0.4.2     # Zero 2W I2C，按需启用
+
+# 测试
+pytest>=7.4.0

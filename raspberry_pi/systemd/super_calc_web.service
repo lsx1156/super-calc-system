@@ -1,0 +1,16 @@
+[Unit]
+Description=超采集算系统 Web服务
+After=multi-user.target network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/super_calc
+ExecStart=/usr/bin/python3 /home/pi/super_calc/app.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

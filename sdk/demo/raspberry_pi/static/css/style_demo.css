@@ -1,0 +1,385 @@
+/* 超采集算系统 Demo 样式 */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", 
+                 "Microsoft YaHei", sans-serif;
+    background: #0a0e1a;
+    color: #e0e6f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 顶部 */
+.header {
+    background: linear-gradient(135deg, #1a2340 0%, #0f1628 100%);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #2a3a5c;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo { font-size: 36px; }
+.header h1 {
+    font-size: 22px;
+    background: linear-gradient(90deg, #4fc3f7, #81c784);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.subtitle { font-size: 12px; color: #8899bb; margin-top: 4px; }
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a2a4a;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot.online { background: #4caf50; box-shadow: 0 0 8px #4caf50; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* 选项卡 */
+.tab-bar {
+    display: flex;
+    background: #0f1628;
+    padding: 0 24px;
+    border-bottom: 1px solid #1a2340;
+    gap: 4px;
+}
+.tab {
+    padding: 14px 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #8899bb;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+.tab:hover { color: #b0c4de; background: #121a30; }
+.tab.active {
+    color: #4fc3f7;
+    border-bottom-color: #4fc3f7;
+    background: linear-gradient(180deg, rgba(79,195,247,0.08) 0%, transparent 100%);
+}
+.tab-icon { font-size: 18px; }
+
+/* 内容区 */
+.content { flex: 1; padding: 20px 24px; overflow-y: auto; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* 面板网格 */
+.panel-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+.panel {
+    background: #121a30;
+    border: 1px solid #1e2a4a;
+    border-radius: 10px;
+    padding: 16px;
+}
+.panel.wide { grid-column: span 1; }
+.panel.full { grid-column: span 2; }
+
+.panel-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #1e2a4a;
+}
+.panel-title h3 { font-size: 15px; color: #b0c4de; font-weight: 600; }
+.panel-actions { display: flex; gap: 8px; }
+.tag {
+    background: #1a2a4a;
+    color: #64b5f6;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+}
+
+/* 按钮 */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.btn-primary { background: #2196f3; color: white; }
+.btn-primary:hover { background: #1976d2; }
+.btn-danger { background: #f44336; color: white; }
+.btn-danger:hover { background: #d32f2f; }
+.btn-warning { background: #ff9800; color: white; }
+.btn-warning:hover { background: #f57c00; }
+.btn-small { padding: 5px 12px; font-size: 12px; }
+.btn.large { padding: 12px 24px; font-size: 15px; }
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+
+/* 控制行 */
+.control-row { display: flex; gap: 16px; margin-bottom: 14px; }
+.control-item { flex: 1; }
+.control-item label { display: block; font-size: 12px; color: #8899bb; margin-bottom: 6px; }
+.control-item select {
+    width: 100%;
+    padding: 8px 10px;
+    background: #0a0e1a;
+    border: 1px solid #2a3a5c;
+    color: #e0e6f0;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+/* 迷你状态 */
+.status-row { display: flex; gap: 10px; }
+.mini-stat {
+    flex: 1;
+    background: #0a0e1a;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+}
+.mini-label { font-size: 11px; color: #8899bb; }
+.mini-value { font-size: 18px; font-weight: bold; color: #4fc3f7; margin-top: 4px; }
+
+/* 图表 */
+.chart-container {
+    height: 260px;
+    position: relative;
+}
+.chart-container.small { height: 180px; }
+.chart-info {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #8899bb;
+}
+.chart-info b { color: #81c784; }
+
+/* 数字通道 */
+.digital-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+}
+.digital-bit {
+    aspect-ratio: 1;
+    background: #0a0e1a;
+    border: 1px solid #1e2a4a;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #556677;
+    transition: all 0.1s;
+}
+.digital-bit.high {
+    background: #2e7d32;
+    color: #c8e6c9;
+    border-color: #4caf50;
+    box-shadow: 0 0 6px rgba(76,175,80,0.5);
+}
+
+/* 表单 */
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; color: #8899bb; margin-bottom: 6px; }
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #0a0e1a;
+    border: 1px solid #2a3a5c;
+    color: #e0e6f0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: monospace;
+}
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+.hint { font-size: 11px; color: #667788; margin-top: 5px; }
+
+/* 进度条 */
+.progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 16px 0;
+}
+.progress-bar {
+    flex: 1;
+    height: 24px;
+    background: #0a0e1a;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #2a3a5c;
+}
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2196f3, #4caf50);
+    border-radius: 12px;
+    transition: width 0.3s;
+}
+.progress-text {
+    font-size: 18px;
+    font-weight: bold;
+    color: #4fc3f7;
+    min-width: 60px;
+    text-align: right;
+}
+
+/* 统计卡片 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+}
+.stat-card {
+    background: #0a0e1a;
+    padding: 14px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #1e2a4a;
+}
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #81c784;
+}
+.stat-label {
+    font-size: 11px;
+    color: #8899bb;
+    margin-top: 4px;
+}
+
+/* 结果框 */
+.result-box {
+    background: #0a0e1a;
+    border: 1px solid #1e2a4a;
+    border-radius: 6px;
+    padding: 16px;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #b0c4de;
+    min-height: 120px;
+    white-space: pre-wrap;
+}
+
+/* 测试列表 */
+.test-list { display: flex; flex-direction: column; gap: 8px; }
+.test-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #0a0e1a;
+    border: 1px solid #1e2a4a;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+.test-item:hover { border-color: #2a3a5c; background: #0e1525; }
+.test-icon { font-size: 24px; width: 40px; text-align: center; }
+.test-info { flex: 1; }
+.test-name { font-size: 14px; font-weight: 500; }
+.test-desc { font-size: 11px; color: #8899bb; margin-top: 2px; }
+
+/* 测试状态 */
+.test-status-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+.test-status-item {
+    background: #0a0e1a;
+    padding: 14px;
+    border-radius: 8px;
+    text-align: center;
+}
+.ts-label { font-size: 11px; color: #8899bb; }
+.ts-value { font-size: 20px; font-weight: bold; color: #4fc3f7; margin-top: 4px; }
+
+/* 系统状态大数字 */
+.system-status {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+.big-stat {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #0f1628 0%, #1a2340 100%);
+    border-radius: 10px;
+    border: 1px solid #2a3a5c;
+}
+.big-label { font-size: 13px; color: #8899bb; }
+.big-value {
+    font-size: 36px;
+    font-weight: bold;
+    margin-top: 8px;
+    background: linear-gradient(90deg, #4fc3f7, #81c784);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 节点网格 */
+.node-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+.node-card {
+    background: #0a0e1a;
+    border: 1px solid #1e2a4a;
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+    transition: all 0.2s;
+}
+.node-card.online { border-color: #4caf50; box-shadow: 0 0 8px rgba(76,175,80,0.2); }
+.node-id { font-size: 12px; color: #8899bb; }
+.node-name { font-size: 16px; font-weight: bold; margin: 6px 0; }
+.node-card.online .node-name { color: #81c784; }
+.node-status { font-size: 11px; color: #666; }
+.node-card.online .node-status { color: #4caf50; }
+
+/* 频率信息 */
+.freq-info { display: flex; flex-direction: column; gap: 10px; }
+.freq-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #0a0e1a;
+    border-radius: 6px;
+    font-size: 13px;
+}
+.freq-row b { color: #ffb74d; }
+
+/* 底部 */
+.footer {
+    background: #0f1628;
+    padding: 10px 24px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #556677;
+    border-top: 1px solid #1a2340;
+}

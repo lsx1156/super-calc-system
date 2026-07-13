@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超采集算系统 Demo - V0.1</title>
+    <link rel="stylesheet" href="/static/css/style_demo.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- 顶部标题栏 -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">⚡</div>
+            <div>
+                <h1>超采集算系统</h1>
+                <p class="subtitle">Demo V0.1 · 单组验证（1×RP2350 + 8×RP2040）</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="status-badge" id="conn_status">
+                <span class="dot online"></span>
+                <span>USB已连接</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能选项卡 -->
+    <div class="tab-bar">
+        <div class="tab active" data-tab="sample">
+            <span class="tab-icon">📊</span>
+            <span>信号采集分析</span>
+        </div>
+        <div class="tab" data-tab="crack">
+            <span class="tab-icon">🔐</span>
+            <span>协议破解</span>
+        </div>
+        <div class="tab" data-tab="hwtest">
+            <span class="tab-icon">🛡️</span>
+            <span>硬件安全测试</span>
+        </div>
+        <div class="tab" data-tab="status">
+            <span class="tab-icon">📡</span>
+            <span>系统状态</span>
+        </div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content">
+
+        <!-- ====== 信号采集分析 ====== -->
+        <div class="tab-content active" id="tab-sample">
+            <div class="panel-grid">
+                <!-- 控制区 -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <h3>采样控制</h3>
+                        <div class="panel-actions">
+                            <button class="btn btn-primary" id="btn_start_sample">▶ 开始采样</button>
+                            <button class="btn btn-danger" id="btn_stop_sample">■ 停止</button>
+                        </div>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-item">
+                            <label>采样率</label>
+                            <select id="sample_rate">
+                                <option value="10000">10 KSPS</option>
+                                <option value="50000" selected>50 KSPS</option>
+                                <option value="100000">100 KSPS</option>
+                                <option value="125000">125 KSPS (最大)</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>超频模式</label>
+                            <select id="oc_mode_sample">
+                                <option value="0" selected>默认 (133/150MHz)</option>
+                                <option value="1">高性能 (200/240MHz)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="status-row">
+                        <div class="mini-stat">
+                            <div class="mini-label">采样状态</div>
+                            <div class="mini-value" id="sample_status">停止</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="mini-label">采样数</div>
+                            <div class="mini-value" id="sample_count">0</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="mini-label">在线Pico</div>
+                            <div class="mini-value" id="pico_online">0/8</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模拟波形 -->
+                <div class="panel wide">
+                    <div class="panel-title">
+                        <h3>模拟采样实时波形 (32路)</h3>
+                        <span class="tag">ADC 12bit</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="analogChart"></canvas>
+                    </div>
+                    <div class="chart-info">
+                        <span>主频率: <b id="peak_freq">-- Hz</b></span>
+                        <span>信噪比: <b id="snr">-- dB</b></span>
+                    </div>
+                </div>
+
+                <!-- 数字通道状态 -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <h3>数字通道 (64路)</h3>
+                        <span class="tag">GPIO 100MSPS</span>
+                    </div>
+                    <div class="digital-grid" id="digital_grid">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- FFT频谱 -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <h3>FFT频谱分析</h3>
+                        <span class="tag">实时</span>
+                    </div>
+                    <div class="chart-container small">
+                        <canvas id="fftChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 协议破解 ====== -->
+        <div class="tab-content" id="tab-crack">
+            <div class="panel-grid">
+                <!-- 破解控制 -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <h3>破解控制</h3>
+                        <span class="tag">MD5暴力破解</span>
+                    </div>
+                    <div class="form-group">
+                        <label>目标哈希 (MD5)</label>
+                        <input type="text" id="target_hash" placeholder="输入32位MD5哈希值" 
+                               value="d41d8cd98f00b204e9800998ecf8427e">
+                        <div class="hint">Demo示例: 空字符串的MD5</div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>密钥长度</label>
+                            <select id="key_length">
+                                <option value="4">4位</option>
+                                <option value="8">8位</option>
+                                <option value="16" selected>16位</option>
+                                <option value="24">24位（耗时较长）</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>字符集</label>
+                            <select id="charset">
+                                <option value="0123456789abcdef" selected>十六进制</option>
+                                <option value="0123456789">数字</option>
+                                <option value="abcdefghijklmnopqrstuvwxyz">小写字母</option>
+                                <option value="0123456789abcdefghijklmnopqrstuvwxyz">数字+小写</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary large" id="btn_start_crack">▶ 开始破解</button>
+                        <button class="btn btn-danger large" id="btn_stop_crack">■ 停止</button>
+                    </div>
+                </div>
+
+                <!-- 破解进度 -->
+                <div class="panel wide">
+                    <div class="panel-title">
+                        <h3>破解进度</h3>
+                        <span class="tag" id="crack_status_tag">待机</span>
+                    </div>
+                    <div class="progress-wrapper">
+                        <div class="progress-bar" id="crack_bar">
+                            <div class="progress-fill" id="crack_fill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="crack_progress_text">0%</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="crack_attempts">0</div>
+                            <div class="stat-label">尝试次数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="crack_rate">0</div>
+                            <div class="stat-label">速度 (次/秒)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="crack_elapsed">0s</div>
+                            <div class="stat-label">已用时间</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="crack_eta">--</div>
+                            <div class="stat-label">预计剩余</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 破解结果 -->
+                <div class="panel full">
+                    <div class="panel-title">
+                        <h3>破解结果</h3>
+                    </div>
+                    <pre class="result-box" id="crack_result">等待破解任务启动...
+
+提示：点击"开始破解"后，系统将使用暴力破解方式尝试匹配目标哈希。
+Demo版本用于验证破解引擎工作流程。</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 硬件安全测试 ====== -->
+        <div class="tab-content" id="tab-hwtest">
+            <div class="panel-grid">
+                <!-- 测试项目列表 -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <h3>测试项目</h3>
+                        <span class="tag">硬件安全</span>
+                    </div>
+                    <div class="test-list">
+                        <div class="test-item" data-test="voltage">
+                            <div class="test-icon">⚡</div>
+                            <div class="test-info">
+                                <div class="test-name">电压监控</div>
+                                <div class="test-desc">核心电压测量与稳定性</div>
+                            </div>
+                            <button class="btn btn-small btn-primary btn-run-test" data-test="voltage">运行</button>
+                        </div>
+                        <div class="test-item" data-test="clock">
+                            <div class="test-icon">⏱️</div>
+                            <div class="test-info">
+                                <div class="test-name">时钟频率测试</div>
+                                <div class="test-desc">系统时钟频率验证</div>
+                            </div>
+                            <button class="btn btn-small btn-primary btn-run-test" data-test="clock">运行</button>
+                        </div>
+                        <div class="test-item" data-test="temperature">
+                            <div class="test-icon">🌡️</div>
+                            <div class="test-info">
+                                <div class="test-name">温度测试</div>
+                                <div class="test-desc">30秒连续温度监测</div>
+                            </div>
+                            <button class="btn btn-small btn-primary btn-run-test" data-test="temperature">运行</button>
+                        </div>
+                        <div class="test-item" data-test="overclock">
+                            <div class="test-icon">🚀</div>
+                            <div class="test-info">
+                                <div class="test-name">超频稳定性</div>
+                                <div class="test-desc">超频下10秒负载测试</div>
+                            </div>
+                            <button class="btn btn-small btn-primary btn-run-test" data-test="overclock">运行</button>
+                        </div>
+                        <div class="test-item" data-test="glitch">
+                            <div class="test-icon">💥</div>
+                            <div class="test-info">
+                                <div class="test-name">电压毛刺注入</div>
+                                <div class="test-desc">10次递增脉宽毛刺测试</div>
+                            </div>
+                            <button class="btn btn-small btn-warning btn-run-test" data-test="glitch">运行</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 测试结果 -->
+                <div class="panel wide">
+                    <div class="panel-title">
+                        <h3>测试结果</h3>
+                        <span class="tag" id="hw_test_status">待机</span>
+                    </div>
+                    <div class="result-box" id="hw_test_result">
+                        选择左侧测试项目，点击"运行"开始测试
+                    </div>
+                    <div class="chart-container small">
+                        <canvas id="tempChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 当前测试状态 -->
+                <div class="panel full">
+                    <div class="panel-title">
+                        <h3>测试状态</h3>
+                    </div>
+                    <div class="test-status-grid">
+                        <div class="test-status-item">
+                            <div class="ts-label">当前测试</div>
+                            <div class="ts-value" id="current_test">--</div>
+                        </div>
+                        <div class="test-status-item">
+                            <div class="ts-label">毛刺次数</div>
+                            <div class="ts-value" id="glitch_count">0</div>
+                        </div>
+                        <div class="test-status-item">
+                            <div class="ts-label">Pico数量</div>
+                            <div class="ts-value" id="test_pico_count">8</div>
+                        </div>
+                        <div class="test-status-item">
+                            <div class="ts-label">核心温度</div>
+                            <div class="ts-value" id="hw_temp">25°C</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 系统状态 ====== -->
+        <div class="tab-content" id="tab-status">
+            <div class="panel-grid">
+                <!-- 整体状态 -->
+                <div class="panel full">
+                    <div class="panel-title">
+                        <h3>系统整体状态</h3>
+                    </div>
+                    <div class="system-status">
+                        <div class="big-stat">
+                            <div class="big-label">工作模式</div>
+                            <div class="big-value" id="big_mode">IDLE</div>
+                        </div>
+                        <div class="big-stat">
+                            <div class="big-label">运行状态</div>
+                            <div class="big-value" id="big_run">Stop</div>
+                        </div>
+                        <div class="big-stat">
+                            <div class="big-label">核心温度</div>
+                            <div class="big-value" id="big_temp">25°C</div>
+                        </div>
+                        <div class="big-stat">
+                            <div class="big-label">Pico2频率</div>
+                            <div class="big-value" id="big_pico2">150MHz</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pico节点状态 -->
+                <div class="panel wide">
+                    <div class="panel-title">
+                        <h3>Pico节点状态 (8片)</h3>
+                    </div>
+                    <div class="node-grid" id="node_grid">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 频率信息 -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <h3>频率配置</h3>
+                    </div>
+                    <div class="freq-info">
+                        <div class="freq-row">
+                            <span>Pico (RP2040)</span>
+                            <b id="freq_pico">133 MHz</b>
+                        </div>
+                        <div class="freq-row">
+                            <span>Pico2 (RP2350)</span>
+                            <b id="freq_pico2">150 MHz</b>
+                        </div>
+                        <div class="freq-row">
+                            <span>核心电压</span>
+                            <b id="vcore">1.10 V</b>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 底部状态栏 -->
+    <div class="footer">
+        <span>超采集算系统 Demo V0.1</span>
+        <span id="current_time">--:--:--</span>
+    </div>
+
+    <script src="/static/js/demo.js"></script>
+</body>
+</html>
